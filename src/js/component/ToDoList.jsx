@@ -1,36 +1,47 @@
 import React, { useState, useEffect } from "react";
 
-
 const TodoList = () => {
   const [toDoItems, setToDoItems] = useState([]);
   const [newItem, setNewItems] = useState("");
 
+  // Get todos from API
   useEffect(() => {
     const fetchToDO = async () => {
-      const data = await fetch ("https://playground.4geeks.com/apis/fake/todos/user/Arcarius41");
-      const result = await data.json();
-      setToDoItems(result);
-    }
+      const data = await fetch(
+        "https://playground.4geeks.com/todo/users/Arcarius41"
+      );
+
+      if (data.ok) {
+        const result = await data.json();
+        setToDoItems(result.todos);
+      } else {
+        await fetch("https://playground.4geeks.com/todo/users/Arcarius41", {
+          method: "POST",
+        });
+        setToDoItems([]);
+      }
+    };
     fetchToDO();
-
   }, []);
-  useEffect(() => {
-    const putTodo = async () => {
-      const data = await fetch ("https://playground.4geeks.com/apis/fake/todos/user/Arcarius41", {
-        method: "PUT",
-        body: JSON.stringify(toDoItems),
-        headers: {"Content-type":"application/json"}
-      });
-      const result = await data.json();
-      console.log(result);
-    }
-    putTodo();
-  }, [toDoItems]);
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (newItem) {
-      let task = {label:newItem,done:false}
-      setToDoItems([...toDoItems, task]);
+      let task = {
+        label: newItem,
+        done: false,
+      };
+
+      const data = await fetch(
+        "https://playground.4geeks.com/todo/todos/Arcarius41",
+        {
+          method: "POST",
+          body: JSON.stringify(task),
+          headers: { "Content-type": "application/json" },
+        }
+      );
+      const result = await data.json();
+
+      setToDoItems([...toDoItems, result]);
       setNewItems("");
     }
   };
@@ -41,16 +52,41 @@ const TodoList = () => {
     }
   };
 
-  const handleDeleteItem = (index) => {
-    const newToDoItems = [...toDoItems];
-    newToDoItems.splice(index, 1);
-    setToDoItems(newToDoItems);
+  // This procedure has changed
+  const handleDeleteItem = async (index) => {
+    const data = await fetch(
+      `https://playground.4geeks.com/todo/todos/${toDoItems[index].id}`,
+      {
+        method: "DELETE",
+      }
+    );
+    setToDoItems(toDoItems.toSpliced(index, 1));
+  };
+
+  // This procedure has changed
+  const handleUpdateTodo = async (index) => {
+    const updatedTodo = {
+      label: toDoItems[index].label,
+      is_done: !toDoItems[index].is_done,
+    };
+
+    const data = await fetch(
+      `https://playground.4geeks.com/todo/todos/${toDoItems[index].id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(updatedTodo),
+        headers: { "Content-type": "application/json" },
+      }
+    );
+    const result = await data.json();
+
+    setToDoItems(toDoItems.toSpliced(index, 1, result));
   };
 
   return (
     <div className="container mt-4">
       <div className="row justify-content-center">
-        <div col-md-8>
+        <div className="col-md-8">
           <h2 className="text-center mb-4"></h2>
           <div className="input-group mb-3">
             <input
@@ -72,7 +108,7 @@ const TodoList = () => {
             </div>
           </div>
           <ul className="list-group">
-            {toDoItems.map((item, index) => (
+            {toDoItems?.map((item, index) => (
               <li
                 key={index}
                 className="list-group-item d-flex justify-content-between align-items-center"
@@ -84,6 +120,11 @@ const TodoList = () => {
                 >
                   Delete
                 </button>
+                <input
+                  type="checkbox"
+                  onChange={() => handleUpdateTodo(index)}
+                  checked={item.is_done}
+                />
               </li>
             ))}
           </ul>
