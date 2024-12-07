@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from "react";
 
 const TodoList = () => {
-  const [toDoItems, setToDoItems] = useState([]);
-  const [newItem, setNewItems] = useState("");
+  const [toDoItems, setTodoItems] = useState([]);
+  const [newItem, setNewItem] = useState("");
 
   // Get todos from API
   useEffect(() => {
-    const fetchToDO = async () => {
-      const data = await fetch(
-        "https://playground.4geeks.com/todo/users/Arcarius41"
-      );
+    const fetchToDo = async () => {
+      try {
+        const data = await fetch(
+          "https://playground.4geeks.com/todo/users/Scott"
+        );
 
-      if (data.ok) {
-        const result = await data.json();
-        setToDoItems(result.todos);
-      } else {
-        await fetch("https://playground.4geeks.com/todo/users/Arcarius41", {
-          method: "POST",
-        });
-        setToDoItems([]);
+        if (data.ok) {
+          const result = await data.json();
+          setTodoItems(result.todo);
+        } else {
+          await fetch("https://playground.4geeks.com/todo/users/Scott", {
+            method: "POST",
+          });
+          setTodoItems([]);
+        }
+      } catch (err) {
+        console.error("Error fetching todos:", err);
       }
     };
-    fetchToDO();
+
+    fetchToDo();
   }, []);
 
   const handleAddItem = async () => {
@@ -31,18 +36,22 @@ const TodoList = () => {
         done: false,
       };
 
-      const data = await fetch(
-        "https://playground.4geeks.com/todo/todos/Arcarius41",
-        {
-          method: "POST",
-          body: JSON.stringify(task),
-          headers: { "Content-type": "application/json" },
-        }
-      );
-      const result = await data.json();
+      try {
+        const data = await fetch(
+          "https://playground.4geeks.com/todo/todos/Scott",
+          {
+            method: "POST",
+            body: JSON.stringify(task),
+            headers: { "Content-type": "application/json" },
+          }
+        );
+        const result = await data.json();
 
-      setToDoItems([...toDoItems, result]);
-      setNewItems("");
+        setTodoItems([...toDoItems, result]);
+        setNewItem("");
+      } catch (err) {
+        console.error("Error adding todo:", err);
+      }
     }
   };
 
@@ -52,49 +61,56 @@ const TodoList = () => {
     }
   };
 
-  // This procedure has changed
   const handleDeleteItem = async (index) => {
-    const data = await fetch(
-      `https://playground.4geeks.com/todo/todos/${toDoItems[index].id}`,
-      {
-        method: "DELETE",
-      }
-    );
-    setToDoItems(toDoItems.toSpliced(index, 1));
+    try {
+      await fetch(
+        `https://playground.4geeks.com/todo/todos/${toDoItems[index].id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      setTodoItems(toDoItems.filter((_, idx) => idx !== index));
+    } catch (err) {
+      console.error("Error deleting todo:", err);
+    }
   };
 
-  // This procedure has changed
   const handleUpdateTodo = async (index) => {
     const updatedTodo = {
       label: toDoItems[index].label,
       is_done: !toDoItems[index].is_done,
     };
 
-    const data = await fetch(
-      `https://playground.4geeks.com/todo/todos/${toDoItems[index].id}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(updatedTodo),
-        headers: { "Content-type": "application/json" },
-      }
-    );
-    const result = await data.json();
-
-    setToDoItems(toDoItems.toSpliced(index, 1, result));
+    try {
+      const data = await fetch(
+        `https://playground.4geeks.com/todo/todos/${toDoItems[index].id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(updatedTodo),
+          headers: { "Content-type": "application/json" },
+        }
+      );
+      const result = await data.json();
+      const updatedItems = [...toDoItems];
+      updatedItems[index] = result;
+      setTodoItems(updatedItems);
+    } catch (err) {
+      console.error("Error updating todo:", err);
+    }
   };
 
   return (
     <div className="container mt-4">
       <div className="row justify-content-center">
         <div className="col-md-8">
-          <h2 className="text-center mb-4"></h2>
+          <h2 className="text-center mb-4">Todo List</h2>
           <div className="input-group mb-3">
             <input
               type="text"
               className="form-control"
               placeholder="Add a new item"
               value={newItem}
-              onChange={(e) => setNewItems(e.target.value)}
+              onChange={(e) => setNewItem(e.target.value)}
               onKeyDown={handleKeypress}
             />
             <div className="input-group-append">
